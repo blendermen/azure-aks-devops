@@ -46,10 +46,10 @@ export default function App() {
             <span className="text-4xl">🚀</span>
           </div>
           <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">
-            Azure AKS React
+            Azure AKS React V2 
           </h1>
           <p className="text-slate-500 mt-2">
-            Aplikacja sterowana przez Kubernetes
+            Aplikacja sterowana przez Kubernetes. Demo Marcin M.
           </p>
         </header>
 
