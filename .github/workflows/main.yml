@@ -1,0 +1,57 @@
+name: CI/CD Pipeline to AKS
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      # 1. Pobranie kodu z repozytorium
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      # 2. Logowanie do Azure za pomocą sekretu AZURE_CREDENTIALS
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      # 3. Logowanie do Azure Container Registry (ACR)
+      - name: Login to ACR
+        run: |
+          az acr login --name ${{ secrets.ACR_USERNAME }}
+
+      # 4. Budowanie i wypychanie obrazu BACKENDU
+      # Poprawiono ścieżkę do Dockerfile oraz kontekst budowania na ./backend
+      - name: Build and push Backend image
+        run: |
+          docker build -t ${{ secrets.ACR_LOGIN_SERVER }}/backend:${{ github.sha }} -f backend/backend.Dockerfile ./backend
+          docker push ${{ secrets.ACR_LOGIN_SERVER }}/backend:${{ github.sha }}
+
+      # 5. Budowanie i wypychanie obrazu FRONTENDU
+      # Poprawiono ścieżkę do Dockerfile oraz kontekst budowania na ./frontend
+      - name: Build and push Frontend image
+        run: |
+          docker build -t ${{ secrets.ACR_LOGIN_SERVER }}/frontend:${{ github.sha }} -f frontend/frontend.Dockerfile ./frontend
+          docker push ${{ secrets.ACR_LOGIN_SERVER }}/frontend:${{ github.sha }}
+
+      # 6. Ustawienie kontekstu klastra AKS
+      - name: Set AKS context
+        uses: azure/aks-set-context@v3
+        with:
+          resource-group: 'MojaZupaRG' # <-- Zmień na nazwę swojej Resource Group
+          cluster-name: 'MojaZupaAKS'      # <-- Zmień na nazwę swojego klastra AKS
+
+      # 7. Wdrożenie manifestów na Kubernetes
+      - name: Deploy to AKS
+        run: |
+          # Podmiana starych nazw obrazów na nowe z tagiem SHA w pliku manifestu
+          sed -i 's|mojazupaacr99.azurecr.io/backend:v1|${{ secrets.ACR_LOGIN_SERVER }}/backend:${{ github.sha }}|g' kubernetes-deployment.yaml
+          sed -i 's|mojazupaacr99.azurecr.io/frontend:v1|${{ secrets.ACR_LOGIN_SERVER }}/frontend:${{ github.sha }}|g' kubernetes-deployment.yaml
+          
+          # Aplikacja zmian w klastrze
+          kubectl apply -f kubernetes-deployment.yaml
+
+
