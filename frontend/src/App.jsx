@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 /**
  * Główny komponent aplikacji frontendowej w React.
@@ -8,12 +8,28 @@ export default function App() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [visits, setVisits] = useState(0);
 
   // Lokalnie uderzamy w port backendu (localhost:5000).
   // W Azure/Kubernetes używamy ścieżki relatywnej '/api/data'.
   const API_URL = window.location.hostname === 'localhost' 
     ? 'http://localhost:5000/api/data' 
     : '/api/data';
+
+     // Efekt uruchamiany przy wejściu na stronę
+  useEffect(() => {
+    fetchVisits();
+  }, []);
+
+  const fetchVisits = async () => {
+    try {
+      const response = await fetch(`${API_URL}/visit`, { method: 'POST' });
+      const result = await response.json();
+      if (result.visits) setVisits(result.visits);
+    } catch (err) {
+      console.error("Błąd licznika:", err);
+    }
+  };
 
   const fetchData = async () => {
     setLoading(true);
@@ -49,7 +65,7 @@ export default function App() {
             Azure AKS React V2 
           </h1>
           <p className="text-slate-500 mt-2">
-            Aplikacja sterowana przez Kubernetes. Demo Marcin M.
+            Demo wdrożenia aplikacji webowej na Azure (React + Flash + PostgreSQL)
           </p>
         </header>
 
@@ -113,7 +129,12 @@ export default function App() {
         </main>
 
         <footer className="mt-8 pt-6 border-t border-slate-100 text-[10px] text-slate-400 uppercase tracking-widest font-semibold">
-          Azure Infrastructure Training
+          Marcin Mazur 2026
+         
+          {/* Licznik odwiedzin */}
+          <div className='mt-3 text-blue-500'>licznik odwiedźin</div>
+          <div className="text-1x1 font-black">{visits}</div>
+       
         </footer>
       </div>
     </div>

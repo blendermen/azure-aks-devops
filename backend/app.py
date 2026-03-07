@@ -32,6 +32,44 @@ def get_db_connection():
             time.sleep(2)
     return None
 
+def init_db():
+    """Tworzy tabelę licznika, jeśli nie istnieje."""
+    conn = get_db_connection()
+    if conn:
+        try:
+            cur = conn.cursor()
+            cur.execute('CREATE TABLE IF NOT EXISTS visit_counter (id serial PRIMARY KEY, count integer);')
+            cur.execute('SELECT count(*) FROM visit_counter;')
+            if cur.fetchone()[0] == 0:
+                cur.execute('INSERT INTO visit_counter (count) VALUES (0);')
+            conn.commit()
+            cur.close()
+            conn.close()
+            print("Baza danych zainicjalizowana pomyślnie.")
+        except Exception as e:
+            print(f"Błąd podczas inicjalizacji bazy: {e}")
+
+# Inicjalizacja przy starcie
+init_db()
+
+@app.route('/api/data/visit', methods=['POST'])
+def add_visit():
+    """Zwiększa licznik w bazie i zwraca aktualną wartość."""
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({"error": "Baza danych niedostępna"}), 500
+    try:
+        cur = conn.cursor()
+        cur.execute('UPDATE visit_counter SET count = count + 1 RETURNING count;')
+        new_count = cur.fetchone()[0]
+        conn.commit()
+        cur.close()
+        conn.close()
+        return jsonify({"visits": new_count})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 @app.route('/api/status', methods=['GET'])
 def get_status():
     """Prosty endpoint do sprawdzania czy API żyje."""
