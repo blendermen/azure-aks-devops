@@ -53,6 +53,45 @@ spec:
     app: db
   ports:
     - port: 5432
+--- #to  wstrzykuje sekrety z Key Vaulta do backendu, więc musi być przed nim
+apiVersion: secrets-store.csi.x-k8s.io/v1
+kind: SecretProviderClass
+metadata:
+  name: zupa-secrets-provider
+spec:
+  provider: azure
+  parameters:
+    usePodIdentity: "false"
+    useVMManagedIdentity: "true" 
+    userAssignedIdentityID: "21fd56d3-7c19-45cc-a678-bcf50209b49c"
+    keyvaultName: "vault-mojazuparg"
+    tenantId: "62a550a1-e4d4-4a67-81d4-7304dd447d44"
+    objects:  |
+      array:
+        - |
+          objectName: DB-HOST
+          objectType: secret
+        - |
+          objectName: DB-USER
+          objectType: secret
+        - |
+          objectName: DB-PASSWORD
+          objectType: secret
+        - |
+          objectName: DB-NAME
+          objectType: secret
+  secretObjects:
+    - secretName: zupa-db-secrets
+      type: Opaque
+      data:
+        - objectName: DB-HOST
+          key: DB-HOST
+        - objectName: DB-USER
+          key: DB-USER
+        - objectName: DB-PASSWORD
+          key: DB-PASSWORD
+        - objectName: DB-NAME
+          key: DB-NAME
 ---
 # --- BACKEND (Flask API) ---
 apiVersion: apps/v1
@@ -73,13 +112,24 @@ spec:
       - name: backend
         image: mojazupaacr99.azurecr.io/backend:v1
         imagePullPolicy: Always
-        env:
-        - name: DB_HOST
-          value: "db"
-        - name: DB_PASSWORD
-          value: "password"
         ports:
         - containerPort: 5000
+        # WSTRZYKNIĘCIE SEKRETÓW JAKO ZMIENNE
+        envFrom:
+        - secretRef:
+            name: zupa-db-secrets
+        # MONTAŻ WOLUMENU (WYZWALACZ)
+        volumeMounts:
+        - name: secrets-store-inline
+          mountPath: "/mnt/secrets-store"
+          readOnly: true
+      volumes:
+        - name: secrets-store-inline
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: "zupa-secrets-provider"
 ---
 apiVersion: v1
 kind: Service

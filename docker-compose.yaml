@@ -29,10 +29,10 @@ services:
       db:
         condition: service_healthy
     environment:
-      - DB_HOST=db
-      - DB_NAME=postgres
-      - DB_USER=postgres
-      - DB_PASSWORD=password
+      - DB-HOST=db
+      - DB-NAME=postgres
+      - DB-USER=postgres
+      - DB-PASSWORD=password
     ports:
       - "5000:5000"
 
