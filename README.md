@@ -95,15 +95,27 @@ Thanks to the `.github/workflows/main.yml` configuration, every code push to the
 
 ---
 
-### 🔍 Troubleshooting & Key Concepts
-
-* **Naming Convention:** Azure Key Vault typically uses dashes (e.g., `DB-PASSWORD`), whereas Python variables and environment lookups expect underscores (`DB_PASSWORD`). These are mapped correctly within the `SecretProviderClass` to ensure the application can read them seamlessly.
-* **Ingress Routing:** Traffic is managed by the NGINX Ingress Controller. Requests starting with `/api` are routed to the **Flask backend**, while all other traffic (`/`) is directed to the **React frontend**. Ensure the Ingress Controller is installed (via Helm or AKS addon).
-* **Database Persistence:** We utilize a `PersistentVolumeClaim` (PVC) backed by Azure Disk. This ensures that even if the database Pod is deleted or restarted, your data in `/var/lib/postgresql/data` remains safe and persistent.
-
 To ensure the CI/CD Pipeline functions correctly, you must add the following secrets in your repository settings (**Settings** -> **Secrets and variables** -> **Actions**):
 | Secret Name | Value / Description |
 | :--- | :--- |
 | **AZURE_CREDENTIALS** | Output of the command: `az ad sp create-for-rbac --name "myApp" --role contributor --scopes /subscriptions/<ID> --json-auth` |
 | **ACR_USERNAME** | Your ACR name (e.g., `mojazupaacr99`) |
 | **ACR_LOGIN_SERVER** | Login server address (e.g., `mojazupaacr99.azurecr.io`) |
+
+
+### 🔍 Troubleshooting & Key Concepts
+
+* **Naming Convention:** Azure Key Vault typically uses dashes (e.g., `DB-PASSWORD`), whereas Python variables and environment lookups expect underscores (`DB_PASSWORD`). These are mapped correctly within the `SecretProviderClass` to ensure the application can read them seamlessly.
+* **Ingress Routing:** Traffic is managed by the NGINX Ingress Controller. Requests starting with `/api` are routed to the **Flask backend**, while all other traffic (`/`) is directed to the **React frontend**. Ensure the Ingress Controller is installed (via Helm or AKS addon).
+* **Database Persistence:** We utilize a `PersistentVolumeClaim` (PVC) backed by Azure Disk. This ensures that even if the database Pod is deleted or restarted, your data in `/var/lib/postgresql/data` remains safe and persistent.
+
+
+
+### 🌐 Accessing the Application
+The application is exposed to the internet via an **NGINX Ingress Controller** acting as a Load Balancer. 
+
+#### 1. Retrieve the External IP
+To find the entry point for the application, list the services in the `ingress-basic` namespace:
+
+```bash
+kubectl get services -n ingress-basic
