@@ -63,7 +63,7 @@ spec:
   parameters:
     usePodIdentity: "false"
     useVMManagedIdentity: "true" 
-    userAssignedIdentityID: "7d25ab4c-dc03-4b0e-b358-7b76d96b5ba7-wrong"
+    userAssignedIdentityID: "7d25ab4c-dc03-4b0e-b358-7b76d96b5ba7"
     keyvaultName: "vault-mojazuparg"
     tenantId: "62a550a1-e4d4-4a67-81d4-7304dd447d44"
     objects:  |
